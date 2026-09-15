@@ -6,32 +6,19 @@ import { parseEther } from "viem";
 describe("Transaction", async function () {
   const { viem } = await network.connect();
 
-  it("should send ETH to the recipient", async function () {
-    const [sender, recipient] = await viem.getWalletClients();
-
-    const publicClient = await viem.getPublicClient();
+  it("should deploy Transaction and return SUBKEY_ONLY for small amounts", async function () {
+    const [sender] = await viem.getWalletClients();
 
     const transaction = await viem.deployContract("Transaction");
 
-    const recipientBefore = await publicClient.getBalance({
-      address: recipient.account.address,
-    });
-
-    await sender.writeContract({
+    const level = await sender.readContract({
       address: transaction.address,
       abi: transaction.abi,
-      functionName: "sendEther",
-      args: [recipient.account.address],
-      value: parseEther("1"),
+      functionName: "determineRequiredAuthLevel",
+      args: [sender.account.address, 0n],
     });
 
-    const recipientAfter = await publicClient.getBalance({
-      address: recipient.account.address,
-    });
-
-    assert.equal(
-      recipientAfter - recipientBefore,
-      parseEther("1")
-    );
+    // SUBKEY_ONLY == 0
+    assert.equal(Number(level), 0);
   });
 });
